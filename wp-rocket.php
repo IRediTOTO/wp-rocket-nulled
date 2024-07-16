@@ -19,6 +19,36 @@
 
 defined( 'ABSPATH' ) || exit;
 
+delete_transient( 'rocket_check_key_errors' );
+delete_transient( 'wp_rocket_no_licence' );
+$consumer_data = [
+	'consumer_key'   => '********',
+	'consumer_email' => 'noreply@gmail.com',
+	'secret_key'     => hash( 'crc32', 'noreply@gmail.com' ),
+];
+update_option( 'wp_rocket_settings', array_merge( get_option( 'wp_rocket_settings', [] ), $consumer_data ) );
+add_filter( 'pre_http_request', function( $pre, $parsed_args, $url ) {
+	if ( strpos( $url, 'https://wp-rocket.me/valid_key.php' ) !== false ) {
+		return [
+			'response' => [ 'code' => 200, 'message' => 'ОК' ],
+			'body'     => json_encode( [ 
+				'success' => true,
+				'data'    => $consumer_data,
+			] )
+		];
+	} elseif ( strpos( $url, 'https://wp-rocket.me/stat/1.0/wp-rocket/user.php' ) !== false ) {
+		return [
+			'response' => [ 'code' => 200, 'message' => 'ОК' ],
+			'body'     => json_encode( [
+				'licence_account'    => '-1',
+				'licence_expiration' => 1893456000,
+				'has_one-com_account' => false,
+			] )
+		];
+	}
+	return $pre;
+}, 10, 3 );
+
 // Rocket defines.
 define( 'WP_ROCKET_VERSION',               '3.16.2.1' );
 define( 'WP_ROCKET_WP_VERSION',            '5.8' );
