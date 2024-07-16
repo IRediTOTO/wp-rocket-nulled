@@ -35,21 +35,36 @@ trait CheckExcludedTrait {
 	 */
 	protected function is_excluded_by_filter( string $url ): bool {
 		global $wp_rewrite;
+
 		$pagination_regex = "/$wp_rewrite->pagination_base/\d+";
+		$url              = strtok( $url, '?' );
+		$url              = user_trailingslashit( $url );
+
+		/**
+		 * Check if the url is excluded or not.
+		 *
+		 * @param bool $isExcluded Default excluded or not.
+		 * @param string $url URL to check.
+		 */
+		$is_excluded = apply_filters( 'rocket_preload_exclude', false, $url );
+
+		if ( $is_excluded ) {
+			return true;
+		}
+
 		/**
 		 * Regex to exclude URI from preload.
 		 *
-		 * @param string[] regexes to check
+		 * @param string[] $regexes Regexes to check.
+		 * @param string   $url Current preloading url.
 		 */
-		$regexes = (array) apply_filters( 'rocket_preload_exclude_urls', [ $pagination_regex ] );
+		$regexes = (array) apply_filters( 'rocket_preload_exclude_urls', [ $pagination_regex ], $url );
 
 		if ( empty( $regexes ) ) {
 			return false;
 		}
 
 		$regexes = array_unique( $regexes );
-		$url     = strtok( $url, '?' );
-		$url     = user_trailingslashit( $url );
 
 		foreach ( $regexes as $regex ) {
 			if ( ! is_string( $regex ) ) {
